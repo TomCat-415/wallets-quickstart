@@ -110,6 +110,147 @@ Security
 - Do not expose `CROSSMINT_API_KEY` to the client.
 - Limit CORS to your localhost dev origin during development.
 
+### API contract (Solana-focused, no code)
+
+Conventions
+- Content-Type: `application/json`
+- Headers: accept optional `X-Correlation-Id` on every request; echo it back in responses
+- Chain: default to `solana` from server env; allow override per request where noted
+- All amounts are strings to preserve precision; SOL uses 9 decimals
+
+1) POST `/api/wallets`
+- Purpose: Create a wallet for a user identifier
+- Request body (at least one identifier type required):
+```json
+{
+  "identifierType": "email" | "userId",
+  "identifier": "user@example.com",
+  "chain": "solana",
+  "label": "optional-human-label"
+}
+```
+- Responses
+  - 201 Created
+```json
+{
+  "walletId": "wlt_123",
+  "address": "SoLanaAddr...",
+  "chain": "solana",
+  "linkedUser": { "type": "email", "value": "user@example.com" },
+  "createdAt": "2025-09-27T10:15:00Z"
+}
+```
+  - 409 Conflict (already exists) → include existing `walletId` and `address`
+  - 400/422 for validation errors
+
+2) GET `/api/wallets/:walletId`
+- Purpose: Fetch basic wallet details
+- Response 200
+```json
+{
+  "walletId": "wlt_123",
+  "address": "SoLanaAddr...",
+  "chain": "solana",
+  "status": "ready",
+  "createdAt": "2025-09-27T10:15:00Z"
+}
+```
+
+3) GET `/api/wallets/:walletId/balance`
+- Query params: `asset` optional
+  - For Solana demo, default `asset=native` (SOL)
+- Response 200 (example returning a list for future SPL tokens compatibility)
+```json
+{
+  "balances": [
+    { "asset": "SOL", "amount": "0.123456789", "decimals": 9 }
+  ]
+}
+```
+
+4) GET `/api/wallets/:walletId/activity`
+- Query params: `limit` (default 20), `cursor` for pagination
+- Response 200
+```json
+{
+  "items": [
+    {
+      "id": "tx_abc",
+      "type": "transfer",
+      "status": "confirmed",
+      "txHash": "5u...abc",
+      "direction": "outbound",
+      "asset": "SOL",
+      "amount": "0.001",
+      "timestamp": "2025-09-27T10:20:00Z"
+    }
+  ],
+  "nextCursor": null
+}
+```
+
+5) POST `/api/wallets/:walletId/transactions`
+- Purpose: Send a small transfer
+- Request body
+```json
+{
+  "to": "RecipientSolAddr...",
+  "amount": "0.001",
+  "asset": "native",
+  "memo": "optional"
+}
+```
+- Responses
+  - 202 Accepted (async processing) or 201 Created (sync)
+```json
+{
+  "transactionId": "tx_abc",
+  "status": "pending",
+  "txHash": null
+}
+```
+  - 400/422 for validation errors; 402 or 409 for insufficient balance/nonce conflicts
+
+6) POST `/api/wallets/:walletId/fund`
+- Purpose: Request devnet funds where supported
+- Request body (keep minimal; provider may ignore `amount`):
+```json
+{
+  "asset": "native",
+  "amount": "1"
+}
+```
+- Response 202
+```json
+{
+  "status": "requested",
+  "txHash": null
+}
+```
+
+7) POST `/api/users` (optional; usually not needed server-side)
+- If implemented, accepts `{ "identifierType": "email"|"userId", "identifier": "..." }`
+- Note: server keys may not include `users.create`; wallet creation with `linkedUser` usually provisions implicitly
+
+Errors (all endpoints)
+- Response shape
+```json
+{
+  "code": "VALIDATION_ERROR" | "CROSSMINT_ERROR" | "NOT_FOUND" | "CONFLICT" | "INSUFFICIENT_FUNDS",
+  "message": "Human-readable message",
+  "details": { "field": "identifier", "reason": "must be a valid email" },
+  "correlationId": "..."
+}
+```
+
+Headers and idempotency
+- Accept `Idempotency-Key` on POST endpoints; forward to Crossmint if applicable and echo back
+- Always echo `X-Correlation-Id` in responses (generate if not provided by client)
+
+Solana specifics
+- For this demo, use native SOL only (`asset=\"native\"` → `SOL`). No USDXM on Solana
+- Amount precision: 9 decimals; validate string format
+
 ---
 
 ## 5) Logging and records
