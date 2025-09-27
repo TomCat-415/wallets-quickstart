@@ -1,0 +1,2 @@
+{"ts":"2025-09-27T06:32:16.377Z","correlationId":"test-1758954735","operation":"createWallet","status":"error","requestSummary":{"identifierType":"email","identifier":"demo+wzrd1@example.com"}}
+{"ts":"2025-09-27T06:34:19.747Z","correlationId":"test-1758954858","operation":"createWallet","identifier":"email:demo+wzrd1@example.com","address":"Ds3R3vD5PBsSWAfxQRTQqAeiXk9x76piCJK5VwwjHq1k","status":"success"}

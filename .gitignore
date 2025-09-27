@@ -44,3 +44,5 @@ next-env.d.ts
 server/.env
 server/logs/*
 server/records/*
+server/node_modules
+server/dist

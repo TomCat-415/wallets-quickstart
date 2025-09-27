@@ -1,5 +1,154 @@
 ## Crossmint Wallets Backend + Frontend Demo Plan
 
+## CORS allowlist (for the backend)
+
+Purpose: Only allow your frontend origins to call the backend from a browser.
+
+- Allowed origins to start with:
+  - `http://localhost:3000` (local Next.js)
+  - Your Vercel production domain (example): `https://wallets-quickstart-wine.vercel.app`
+  - Your Vercel preview domains (pattern). Options:
+    - Add specific preview URLs as you use them, or
+    - Use a safe regex that matches your project’s preview URLs only (e.g., hosts that start with your project slug and end with `.vercel.app`).
+
+- Methods: `GET, POST, OPTIONS`
+- Allowed request headers: `Content-Type, X-Correlation-Id, Idempotency-Key`
+- Credentials: `false` (we’re not using cookies)
+
+Notes
+- CORS is enforced by the backend, regardless of where you deploy it (Render/Railway/Fly/etc.).
+- If you see browser CORS errors, add the exact frontend origin shown in the error to the allowlist.
+
+---
+
+## Logging format (pino JSON)
+
+Each log line is a single JSON object. Fields:
+
+- `level`: severity (info, warn, error)
+- `time`: ISO timestamp
+- `msg`: short human message
+- `route`: e.g., `POST /api/wallets`
+- `correlationId`: request tracking id (from header or generated)
+- `request`: `{ ip, method, path }`
+- `actor`: `{ identifierType, identifier }` when applicable (e.g., wallet create)
+- `wallet`: `{ walletId, address }` when available
+- `operation`: one of `createWallet | getWallet | getBalance | getActivity | createTransaction | fund`
+- `outcome`: `success | error`
+- `error`: `{ code, message }` on failures only
+- `durationMs`: server handling time for the request
+
+Write logs to both stdout and file: `server/logs/app.log`.
+
+---
+
+## Records (audit JSONL)
+
+Purpose: High-level audit trail separate from verbose logs. Append one JSON object per line to `server/records/operations.jsonl`.
+
+Fields per record:
+
+- `ts`: ISO timestamp
+- `correlationId`: same tracking id as in logs
+- `operation`: `createWallet | getWallet | getBalance | getActivity | createTransaction | fund`
+- `identifier`: email or userId, when present
+- `walletId`, `address`: when relevant
+- `requestSummary`: minimal sanitized subset (e.g., `{ to, amount, asset }`)
+- `responseSummary`: minimal sanitized subset (e.g., `{ transactionId, txHash, status }`)
+- `status`: `success | error`
+
+These records are easy to tail and show to stakeholders without exposing sensitive details.
+
+---
+
+## Postman test plan (local)
+
+Base URL: `http://localhost:4000`
+
+Common headers for all requests:
+
+- `Content-Type: application/json` → tells the server to parse JSON
+- `X-Correlation-Id: test-<timestamp>` (optional) → your request tracking number
+- `Idempotency-Key: <uuid>` (optional, POST only) → dedupe key if a POST is retried
+
+1) Create wallet
+
+- Method/URL: `POST /api/wallets`
+- Body:
+```json
+{
+  "identifierType": "email",
+  "identifier": "demo+wzrd1@example.com"
+}
+```
+- Expect 201 with `{ walletId, address, chain, linkedUser, createdAt }`
+
+2) Get wallet
+
+- Method/URL: `GET /api/wallets/{walletId}`
+- Expect 200 with `{ walletId, address, chain, status }`
+
+3) Balance (SOL)
+
+- Method/URL: `GET /api/wallets/{walletId}/balance`
+- Expect 200:
+```json
+{ "balances": [ { "asset": "SOL", "amount": "0.000000000", "decimals": 9 } ] }
+```
+
+4) Activity
+
+- Method/URL: `GET /api/wallets/{walletId}/activity`
+- Expect 200:
+```json
+{ "items": [], "nextCursor": null }
+```
+
+5) Transfer (demo amount)
+
+- Method/URL: `POST /api/wallets/{walletId}/transactions`
+- Body:
+```json
+{
+  "to": "RecipientSolAddr...",
+  "amount": "0.001",
+  "asset": "native",
+  "memo": "WZRD demo transfer 1"
+}
+```
+- Expect 202 or 201 with `{ transactionId, status, txHash|null }`
+- Then call activity again to see it appear
+
+6) Fund (optional, later)
+
+- Method/URL: `POST /api/wallets/{walletId}/fund`
+- Body:
+```json
+{ "asset": "native", "amount": "1" }
+```
+- Expect 202 `{ status: "requested" }` if enabled; otherwise omit from v1
+
+Error examples
+
+- 400/422 bad input:
+```json
+{
+  "code": "VALIDATION_ERROR",
+  "message": "identifier must be a valid email",
+  "details": { "field": "identifier" },
+  "correlationId": "..."
+}
+```
+
+- 409 duplicate with same idempotency key:
+```json
+{
+  "code": "CONFLICT",
+  "message": "Duplicate request",
+  "correlationId": "..."
+}
+```
+
 Goal: Create a working backend example for Crossmint Wallets using Node.js and REST API, wire it to this frontend (wallets-quickstart), and demonstrate end-to-end behavior with logging and simple records.
 
 ### What you will build
