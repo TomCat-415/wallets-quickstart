@@ -5,7 +5,11 @@ import { useEffect, useMemo, useState } from "react";
 type FetchResult = { status: number; data: unknown; correlationId: string } | null;
 
 export default function BackendDemoPage() {
-  const backend = useMemo(() => process.env.NEXT_PUBLIC_BACKEND_URL || "", []);
+  const backend = useMemo(() => {
+    const raw = process.env.NEXT_PUBLIC_BACKEND_URL || "";
+    // Normalize: remove trailing slashes to avoid //path 404s
+    return raw.replace(/\/+$/, "");
+  }, []);
   const [health, setHealth] = useState<FetchResult>(null);
   const [email, setEmail] = useState<string>(`thomasharuo415+demo${Date.now()}@gmail.com`);
   const [address, setAddress] = useState<string>("");
