@@ -1,2 +1,4 @@
 {"ts":"2025-09-27T06:32:16.377Z","correlationId":"test-1758954735","operation":"createWallet","status":"error","requestSummary":{"identifierType":"email","identifier":"demo+wzrd1@example.com"}}
 {"ts":"2025-09-27T06:34:19.747Z","correlationId":"test-1758954858","operation":"createWallet","identifier":"email:demo+wzrd1@example.com","address":"Ds3R3vD5PBsSWAfxQRTQqAeiXk9x76piCJK5VwwjHq1k","status":"success"}
+{"ts":"2025-09-27T07:13:00.918Z","correlationId":"test-1758957179-create","operation":"createWallet","identifier":"email:thomasharuo415+srv2@gmail.com","address":"5PDGmNt4RvNjjyUW9kCcVEdGaxqmCVykFYJrSZeATjTD","status":"success"}
+{"ts":"2025-09-27T07:18:11.117Z","correlationId":"test-1758957490-tx","operation":"createTransaction","walletId":"5PDGmNt4RvNjjyUW9kCcVEdGaxqmCVykFYJrSZeATjTD","status":"error","requestSummary":{"to":"HptcYrheGWuvMDD8F5JVSMdv1MCpgtxTn88jUVzHDfnh","amount":"0.001","asset":"native","memo":"WZRD demo transfer 1"}}

@@ -34,3 +34,53 @@ export async function createWallet(req: CreateWalletRequest, idempotencyKey?: st
   return response.data;
 }
 
+export async function getWallet(walletId: string) {
+  const response = await crossmint.get(`/wallets/${encodeURIComponent(walletId)}`);
+  return response.data;
+}
+
+export async function getWalletBalances(walletId: string, params?: { asset?: string }) {
+  // Try singular path first (most providers use /balance)
+  try {
+    const response = await crossmint.get(`/wallets/${encodeURIComponent(walletId)}/balance`, {
+      params: { chain: env.CHAIN, ...params },
+    });
+    return response.data;
+  } catch (e: any) {
+    if (e?.response?.status !== 404) throw e;
+    // Fallback to /balances if singular path is not found
+    const response = await crossmint.get(`/wallets/${encodeURIComponent(walletId)}/balances`, {
+      params: { chain: env.CHAIN, ...params },
+    });
+    return response.data;
+  }
+}
+
+export async function getWalletActivity(walletId: string, params?: { limit?: number; cursor?: string }) {
+  const response = await crossmint.get(`/wallets/${encodeURIComponent(walletId)}/transactions`, {
+    params: { chain: env.CHAIN, ...params },
+  });
+  return response.data;
+}
+
+export async function createTransfer(
+  walletId: string,
+  body: { to: string; amount: string; asset: "native"; memo?: string },
+  idempotencyKey?: string
+) {
+  const headers = idempotencyKey ? { "Idempotency-Key": idempotencyKey } : undefined;
+  // Map our contract to Crossmint expected body
+  const response = await crossmint.post(
+    `/wallets/${encodeURIComponent(walletId)}/transactions`,
+    {
+      chain: env.CHAIN,
+      destinationAddress: body.to,
+      amount: body.amount,
+      token: body.asset === "native" ? "native" : body.asset,
+      memo: body.memo,
+    },
+    { headers }
+  );
+  return response.data;
+}
+
