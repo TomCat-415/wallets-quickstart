@@ -32,10 +32,17 @@ yarn-error.log*
 
 # env files 
 .env
-
+.env.local
 # vercel
 .vercel
 
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+#backend
+server/.env
+server/logs/*
+server/records/*
+server/node_modules
+server/dist
