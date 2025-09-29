@@ -29,7 +29,7 @@ flowchart LR
   B --> C[Express Backend on Render]
   C --> D[Crossmint REST API]
   C --> E[Solana RPC / Helius]
-  C --> F[Logs (pino)]
+  C --> F[Logs pino]
   C --> G[Records JSONL]
 ```
 
