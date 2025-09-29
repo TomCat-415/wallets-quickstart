@@ -62,6 +62,8 @@ export default function BackendDemoPage() {
       body: JSON.stringify({ to: address, amount: "0.001", asset: "native", memo: "WZRD demo transfer 1" }),
     });
 
+  const ready = health?.status === 200;
+
   return (
     <div className="min-h-screen bg-gray-50">
       <div className="max-w-5xl mx-auto px-4 py-8">
@@ -76,6 +78,11 @@ export default function BackendDemoPage() {
             </span>
             <button onClick={checkHealth} className="px-3 py-1.5 rounded-lg border text-sm text-gray-700 hover:bg-gray-50">Recheck</button>
           </div>
+          {!ready && (
+            <div className="text-sm text-gray-600 bg-yellow-50 border border-yellow-200 rounded-md px-3 py-2 w-fit">
+              Initializing backend… actions will enable once the server is ready.
+            </div>
+          )}
         </div>
 
         {/* Create Wallet */}
@@ -83,8 +90,8 @@ export default function BackendDemoPage() {
           <div className="bg-white rounded-2xl border shadow-sm p-6">
             <h2 className="text-lg font-semibold mb-3">Create server wallet</h2>
             <label className="text-sm text-gray-600">Email</label>
-            <input value={email} onChange={(e) => setEmail(e.target.value)} className="mt-1 w-full border rounded-lg px-3 py-2 text-sm" placeholder="email@example.com" />
-            <button onClick={createWallet} className="mt-3 w-full rounded-lg bg-black text-white px-3 py-2 text-sm hover:opacity-90">Create wallet</button>
+            <input value={email} onChange={(e) => setEmail(e.target.value)} disabled={!ready} className="mt-1 w-full border rounded-lg px-3 py-2 text-sm disabled:bg-gray-100 disabled:cursor-not-allowed" placeholder="email@example.com" />
+            <button onClick={createWallet} disabled={!ready} className="mt-3 w-full rounded-lg bg-black text-white px-3 py-2 text-sm hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed">Create wallet</button>
             {address && (
               <div className="mt-3 text-sm text-gray-700">
                 Address: <span className="font-mono break-all">{address}</span>
@@ -96,12 +103,12 @@ export default function BackendDemoPage() {
           <div className="bg-white rounded-2xl border shadow-sm p-6">
             <h2 className="text-lg font-semibold mb-3">Wallet actions</h2>
             <label className="text-sm text-gray-600">Address</label>
-            <input value={address} onChange={(e) => setAddress(e.target.value)} className="mt-1 w-full border rounded-lg px-3 py-2 text-sm" placeholder="Paste address" />
+            <input value={address} onChange={(e) => setAddress(e.target.value)} disabled={!ready} className="mt-1 w-full border rounded-lg px-3 py-2 text-sm disabled:bg-gray-100 disabled:cursor-not-allowed" placeholder="Paste address" />
             <div className="grid grid-cols-2 gap-2 mt-3">
-              <button onClick={getWallet} className="rounded-lg border px-3 py-2 text-sm hover:bg-gray-50">Get wallet</button>
-              <button onClick={getBalance} className="rounded-lg border px-3 py-2 text-sm hover:bg-gray-50">Get balance</button>
-              <button onClick={getActivity} className="rounded-lg border px-3 py-2 text-sm hover:bg-gray-50">Get activity</button>
-              <button onClick={sendTx} className="rounded-lg border px-3 py-2 text-sm hover:bg-gray-50">Send 0.001 SOL</button>
+              <button onClick={getWallet} disabled={!ready} className="rounded-lg border px-3 py-2 text-sm hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed">Get wallet</button>
+              <button onClick={getBalance} disabled={!ready} className="rounded-lg border px-3 py-2 text-sm hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed">Get balance</button>
+              <button onClick={getActivity} disabled={!ready} className="rounded-lg border px-3 py-2 text-sm hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed">Get activity</button>
+              <button onClick={sendTx} disabled={!ready} className="rounded-lg border px-3 py-2 text-sm hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed">Send 0.001 SOL</button>
             </div>
           </div>
 
