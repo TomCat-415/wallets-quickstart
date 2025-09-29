@@ -47,12 +47,6 @@ export function Dashboard() {
           <div className="flex items-center justify-between">
             <h2 className="text-xl font-semibold">Dashboard</h2>
             <div className="flex items-center gap-3">
-              <a
-                href="/backend-demo"
-                className="px-3 py-1.5 rounded-lg border text-sm text-gray-700 hover:bg-gray-50 transition-colors"
-              >
-                Backend Demo (Server API)
-              </a>
               <LogoutButton />
             </div>
           </div>

@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { Footer } from "@/components/footer";
 
 type FetchResult = { status: number; data: unknown; correlationId: string } | null;
 
@@ -67,7 +68,6 @@ export default function BackendDemoPage() {
         <div className="flex flex-col gap-4 bg-white rounded-2xl border shadow-sm p-6 mb-6">
           <div className="flex items-center justify-between">
             <h1 className="text-xl font-semibold">Backend Demo (Server API)</h1>
-            <a className="text-sm text-gray-600 hover:underline" href="/">Back to Home</a>
           </div>
           <div className="text-sm text-gray-600">Backend URL: <span className="font-mono">{backend || "(not set)"}</span></div>
           <div className="flex items-center gap-3">
@@ -126,6 +126,7 @@ export default function BackendDemoPage() {
           </div>
         </div>
       </div>
+      <Footer />
     </div>
   );
 }
