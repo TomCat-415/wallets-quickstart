@@ -5,18 +5,18 @@
 ```mermaid
 flowchart TB
   subgraph Client
-    A[Next.js Frontend (Vercel)]
+    A[Next.js Frontend Vercel]
   end
 
   subgraph Server
-    B[Express API (Render)]
+    B[Express API Render]
     E[Pino Logs]
-    F[Audit Records (JSONL)]
+    F[Audit Records JSONL]
   end
 
   subgraph External
     C[Crossmint Wallets REST API]
-    D[Solana RPC / Helius (devnet)]
+    D[Solana RPC / Helius devnet]
   end
 
   A -->|HTTP GET/POST| B
