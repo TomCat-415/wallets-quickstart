@@ -6,7 +6,7 @@
 </div>
 
 ## Live links
-- Frontend (Vercel): `https://<your-vercel-domain>/backend-demo`
+- Frontend (Vercel): `https://wallets-quickstart-wine.vercel.app/`
 - Backend health (Render): `https://wallets-quickstart.onrender.com/health`
 
 ## What I built
