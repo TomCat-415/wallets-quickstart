@@ -3,7 +3,8 @@ import path from "path";
 import fs from "fs";
 import dotenv from "dotenv";
 
-// Load env from server/.env (already gitignored)
+// WHY: 12‑factor config. Load server/.env (gitignored) for local dev,
+// validate at boot so bad configs fail fast.
 const envPath = path.resolve(__dirname, "../../.env");
 if (fs.existsSync(envPath)) {
   dotenv.config({ path: envPath });

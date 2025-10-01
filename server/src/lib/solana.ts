@@ -2,6 +2,9 @@ import axios from "axios";
 
 const DEVNET_RPC = "https://api.devnet.solana.com";
 
+// WHY: For demo reliability we fall back to native SOL balance via RPC
+// when the provider path is unavailable. Documented as a dev-only helper.
+
 export async function getNativeSolBalance(address: string): Promise<{ asset: string; amount: string; decimals: number }> {
   const rpcBody = {
     jsonrpc: "2.0",

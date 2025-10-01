@@ -2,6 +2,9 @@ import fs from "fs";
 import path from "path";
 import { env } from "./env";
 
+// WHY: Audit records provide a compact, append-only trail of business actions.
+// Use logs for detailed debugging; use records to prove what happened.
+
 type OperationName =
   | "createWallet"
   | "getWallet"

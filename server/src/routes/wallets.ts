@@ -17,6 +17,8 @@ function cryptoRandom(): string {
 }
 
 // POST /api/wallets
+// WHY: Provision a new wallet for a user identifier. Returns 201 with resource info.
+// Uses Idempotency-Key to avoid duplicate creations and echoes X-Correlation-Id for tracing.
 router.post("/wallets", async (req, res) => {
   const started = Date.now();
   const correlationId = getCorrelationId(req);
@@ -69,6 +71,7 @@ router.post("/wallets", async (req, res) => {
 export default router;
 
 // GET /api/wallets/:walletId
+// WHY: Fetch canonical wallet details. 200 on success, 404->NOT_FOUND.
 router.get("/wallets/:walletId", async (req, res) => {
   const started = Date.now();
   const correlationId = getCorrelationId(req);
@@ -95,6 +98,7 @@ router.get("/wallets/:walletId", async (req, res) => {
 });
 
 // GET /api/wallets/:walletId/balance
+// WHY: Return balances. If provider path is missing, fall back to devnet RPC for SOL.
 router.get("/wallets/:walletId/balance", async (req, res) => {
   const started = Date.now();
   const correlationId = getCorrelationId(req);
@@ -123,6 +127,7 @@ router.get("/wallets/:walletId/balance", async (req, res) => {
 });
 
 // GET /api/wallets/:walletId/activity
+// WHY: List recent transactions (paginated with cursor).
 router.get("/wallets/:walletId/activity", async (req, res) => {
   const started = Date.now();
   const correlationId = getCorrelationId(req);
@@ -150,6 +155,8 @@ router.get("/wallets/:walletId/activity", async (req, res) => {
 });
 
 // POST /api/wallets/:walletId/transactions
+// WHY: Submit a transfer; returns 202 Accepted for async processing.
+// Validates body, supports idempotency, and writes an audit record.
 router.post("/wallets/:walletId/transactions", async (req, res) => {
   const started = Date.now();
   const correlationId = getCorrelationId(req);

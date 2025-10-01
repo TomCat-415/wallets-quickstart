@@ -2,6 +2,9 @@ import cors from "cors";
 import type { CorsOptions } from "cors";
 import { env } from "../lib/env";
 
+// WHY: Browsers enforce CORS. This middleware allows our FE origins
+// (localhost + Vercel previews/prod) to call the API while blocking others.
+
 export function createCorsMiddleware() {
   const options: CorsOptions = {
     origin: (requestOrigin, callback) => {

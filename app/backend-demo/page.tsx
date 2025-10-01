@@ -5,6 +5,8 @@ import { Footer } from "@/components/footer";
 
 type FetchResult = { status: number; data: unknown; correlationId: string } | null;
 
+// WHY: This page demonstrates server-centric wallet ops.
+// It warms up the backend, shows correlationId, and keeps UI read-only until ready.
 export default function BackendDemoPage() {
   const backend = useMemo(() => {
     const raw = process.env.NEXT_PUBLIC_BACKEND_URL || "";

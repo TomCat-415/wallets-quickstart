@@ -9,6 +9,8 @@ export const crossmint = axios.create({
   },
   timeout: 30_000,
 });
+// WHY: Centralized axios client enforces base URL, auth header, and timeouts.
+// Callers pass Idempotency-Key when they need de-duplication on POST.
 
 export interface CreateWalletRequest {
   identifierType: "email" | "userId";
@@ -40,7 +42,7 @@ export async function getWallet(walletId: string) {
 }
 
 export async function getWalletBalances(walletId: string, params?: { asset?: string }) {
-  // Try singular path first (most providers use /balance)
+  // WHY: Provider paths can differ; try /balance first, then /balances.
   try {
     const response = await crossmint.get(`/wallets/${encodeURIComponent(walletId)}/balance`, {
       params: { chain: env.CHAIN, ...params },
