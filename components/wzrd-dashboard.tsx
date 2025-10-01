@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Image from "next/image";
 import { toast } from "sonner";
 import { Footer } from "./footer";
@@ -33,6 +33,30 @@ export function WzrdDashboard({
   const [copiedAddress, setCopiedAddress] = useState(false);
   const [copiedCorrelationId, setCopiedCorrelationId] = useState<string | null>(null);
   const [loadingAction, setLoadingAction] = useState<string | null>(null);
+  const [balance, setBalance] = useState<string | null>(null);
+  const [balanceLoading, setBalanceLoading] = useState(false);
+
+  // WHY: Fetch balance on mount to display prominently in Balance Card.
+  // Production apps show balance immediately, not hidden behind a button.
+  useEffect(() => {
+    fetchBalance();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const fetchBalance = async () => {
+    setBalanceLoading(true);
+    try {
+      const result = await onApiCall("getBalance", `/api/wallets/${address}/balance`);
+      if (result?.data && typeof result.data === 'object') {
+        const balanceData = result.data as any;
+        // Extract SOL balance from response
+        const solBalance = balanceData.balance || balanceData.lamports || "0";
+        setBalance(solBalance);
+      }
+    } finally {
+      setBalanceLoading(false);
+    }
+  };
 
   const handleCopyAddress = async () => {
     try {
@@ -164,35 +188,33 @@ export function WzrdDashboard({
             </button>
           </div>
 
-          {/* Wallet Details Card */}
+          {/* Wallet Details Card - Compact Horizontal Layout */}
           <div className="bg-white rounded-2xl border shadow-sm p-6">
             <h3 className="text-lg font-semibold mb-4">Wallet details</h3>
-            <div className="flex flex-col gap-3">
-              <div className="flex items-center gap-2 justify-between">
-                <span className="text-sm font-medium text-gray-500">Email</span>
+            <div className="flex flex-col gap-2">
+              <div className="flex items-center gap-2">
+                <span className="text-sm font-medium text-gray-500 min-w-[70px]">Address</span>
+                <span className="font-mono text-sm text-gray-900">
+                  {address.slice(0, 6)}...{address.slice(-6)}
+                </span>
+                <button
+                  onClick={handleCopyAddress}
+                  className="text-gray-500 hover:text-gray-700 transition-colors"
+                  title="Copy address"
+                >
+                  {copiedAddress ? (
+                    <Image src="/circle-check-big.svg" alt="Copied" width={14} height={14} />
+                  ) : (
+                    <Image src="/copy.svg" alt="Copy" width={14} height={14} />
+                  )}
+                </button>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="text-sm font-medium text-gray-500 min-w-[70px]">Owner</span>
                 <span className="text-sm text-gray-900">{email}</span>
               </div>
-              <div className="flex items-center gap-2 justify-between">
-                <span className="text-sm font-medium text-gray-500">Address</span>
-                <div className="flex items-center gap-2">
-                  <span className="font-mono text-sm text-gray-900">
-                    {address.slice(0, 6)}...{address.slice(-6)}
-                  </span>
-                  <button
-                    onClick={handleCopyAddress}
-                    className="text-gray-500 hover:text-gray-700 transition-colors"
-                    title="Copy address"
-                  >
-                    {copiedAddress ? (
-                      <Image src="/circle-check-big.svg" alt="Copied" width={16} height={16} />
-                    ) : (
-                      <Image src="/copy.svg" alt="Copy" width={16} height={16} />
-                    )}
-                  </button>
-                </div>
-              </div>
-              <div className="flex items-center gap-2 justify-between">
-                <span className="text-sm font-medium text-gray-500">Chain</span>
+              <div className="flex items-center gap-2">
+                <span className="text-sm font-medium text-gray-500 min-w-[70px]">Chain</span>
                 <span className="text-sm text-gray-900">Solana Devnet</span>
               </div>
             </div>
@@ -200,90 +222,83 @@ export function WzrdDashboard({
 
           {/* Main Grid - Balance, Transfer, Activity */}
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            {/* Balance & Actions */}
+            {/* SOL Balance Card */}
             <div className="bg-white rounded-2xl border shadow-sm p-6">
-              <h3 className="text-lg font-semibold mb-4">Balance & Info</h3>
-              <div className="space-y-2">
-                <div className="flex gap-2">
-                  <button
-                    onClick={getWallet}
-                    disabled={loadingAction === "getWallet"}
-                    className="flex-1 rounded-lg border px-3 py-2 text-sm hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    {loadingAction === "getWallet" ? "Loading..." : "Get wallet info"}
-                  </button>
-                  <button
-                    onClick={() => copyCurl(buildCurl("GET", `/api/wallets/${address}`))}
-                    className="px-3 py-2 rounded-lg border text-xs text-gray-600 hover:bg-gray-50 transition-colors"
-                    title="Copy cURL command (Dev)"
-                  >
-                    &lt;/&gt;
-                  </button>
-                </div>
-                <div className="flex gap-2">
-                  <button
-                    onClick={getBalance}
-                    disabled={loadingAction === "getBalance"}
-                    className="flex-1 rounded-lg border px-3 py-2 text-sm hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    {loadingAction === "getBalance" ? "Loading..." : "Get balance"}
-                  </button>
-                  <button
-                    onClick={() => copyCurl(buildCurl("GET", `/api/wallets/${address}/balance`))}
-                    className="px-3 py-2 rounded-lg border text-xs text-gray-600 hover:bg-gray-50 transition-colors"
-                    title="Copy cURL command (Dev)"
-                  >
-                    &lt;/&gt;
-                  </button>
-                </div>
-                <div className="flex gap-2">
-                  <button
-                    onClick={getActivity}
-                    disabled={loadingAction === "getActivity"}
-                    className="flex-1 rounded-lg border px-3 py-2 text-sm hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    {loadingAction === "getActivity" ? "Loading..." : "Get activity"}
-                  </button>
-                  <button
-                    onClick={() => copyCurl(buildCurl("GET", `/api/wallets/${address}/activity`))}
-                    className="px-3 py-2 rounded-lg border text-xs text-gray-600 hover:bg-gray-50 transition-colors"
-                    title="Copy cURL command (Dev)"
-                  >
-                    &lt;/&gt;
-                  </button>
-                </div>
+              <div className="flex items-center gap-2 mb-4">
+                <Image
+                  src="/solana-icon.svg"
+                  alt="Solana"
+                  width={24}
+                  height={24}
+                  className="text-purple-600"
+                />
+                <h3 className="text-lg font-semibold">SOL Balance</h3>
               </div>
+
+              {balanceLoading ? (
+                <div className="text-4xl font-bold mb-4 text-gray-400 animate-pulse">
+                  Loading...
+                </div>
+              ) : (
+                <div className="text-4xl font-bold mb-4">
+                  {balance || "0.000"} SOL
+                </div>
+              )}
+
+              <button
+                onClick={fetchBalance}
+                disabled={balanceLoading}
+                className="w-full rounded-lg bg-gray-900 text-white px-4 py-3 text-sm font-medium hover:bg-gray-800 disabled:opacity-50 disabled:cursor-not-allowed transition-colors mb-3"
+              >
+                {balanceLoading ? "Refreshing..." : "Refresh Balance"}
+              </button>
+
+              <p className="text-xs text-gray-500 text-center">
+                Balance updates may take a few seconds after transfers
+              </p>
             </div>
 
             {/* Transfer Funds */}
             <div className="bg-white rounded-2xl border shadow-sm p-6">
-              <h3 className="text-lg font-semibold mb-4">Transfer funds</h3>
+              <h3 className="text-lg font-semibold mb-2">Transfer funds</h3>
+              <p className="text-sm text-gray-600 mb-4">Send funds to another wallet</p>
+
+              {/* Big Amount Display */}
+              <div className="flex items-center gap-2 mb-4">
+                <Image
+                  src="/solana-icon.svg"
+                  alt="SOL"
+                  width={32}
+                  height={32}
+                />
+                <input
+                  type="text"
+                  value={transferAmount}
+                  onChange={(e) => setTransferAmount(e.target.value)}
+                  className="text-4xl font-bold w-full outline-none"
+                  placeholder="0.000"
+                />
+                <span className="text-2xl font-semibold text-gray-400">SOL</span>
+              </div>
+
               <div className="space-y-3">
                 <div>
-                  <label className="text-sm text-gray-600">To address</label>
+                  <label className="text-sm font-medium text-gray-700 mb-1 block">Transfer to</label>
                   <input
                     value={transferTo}
                     onChange={(e) => setTransferTo(e.target.value)}
-                    className="mt-1 w-full border rounded-lg px-3 py-2 text-sm"
-                    placeholder="Paste recipient address"
+                    className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-gray-900"
+                    placeholder="Enter wallet address"
                   />
                 </div>
-                <div>
-                  <label className="text-sm text-gray-600">Amount (SOL)</label>
-                  <input
-                    value={transferAmount}
-                    onChange={(e) => setTransferAmount(e.target.value)}
-                    className="mt-1 w-full border rounded-lg px-3 py-2 text-sm"
-                    placeholder="0.001"
-                  />
-                </div>
+
                 <div className="flex gap-2">
                   <button
                     onClick={sendTx}
                     disabled={!transferTo || loadingAction === "sendTx"}
-                    className="flex-1 rounded-lg bg-black text-white px-3 py-2 text-sm hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed transition-opacity"
+                    className="flex-1 rounded-lg bg-gray-900 text-white px-3 py-2 text-sm font-medium hover:bg-gray-800 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                   >
-                    {loadingAction === "sendTx" ? "Sending..." : "Send transfer"}
+                    {loadingAction === "sendTx" ? "Sending..." : "Transfer"}
                   </button>
                   <button
                     onClick={() =>
