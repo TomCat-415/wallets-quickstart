@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Image from "next/image";
+import { toast } from "sonner";
 import { Footer } from "./footer";
 
 // WHY: Dashboard separates "wallet info" from "API testing tools" for clarity.
@@ -29,6 +30,61 @@ export function WzrdDashboard({
 }: WzrdDashboardProps) {
   const [transferTo, setTransferTo] = useState("");
   const [transferAmount, setTransferAmount] = useState("0.001");
+  const [copiedAddress, setCopiedAddress] = useState(false);
+  const [copiedCorrelationId, setCopiedCorrelationId] = useState<string | null>(null);
+
+  const handleCopyAddress = async () => {
+    try {
+      await navigator.clipboard.writeText(address);
+      setCopiedAddress(true);
+      setTimeout(() => setCopiedAddress(false), 2000);
+    } catch (err) {
+      console.error("Failed to copy address:", err);
+    }
+  };
+
+  const handleCopyCorrelationId = async (correlationId: string) => {
+    try {
+      await navigator.clipboard.writeText(correlationId);
+      setCopiedCorrelationId(correlationId);
+      setTimeout(() => setCopiedCorrelationId(null), 2000);
+    } catch (err) {
+      console.error("Failed to copy correlationId:", err);
+    }
+  };
+
+  // WHY: Status code coloring teaches HTTP semantics visually.
+  // 2xx = success (green), 4xx = client error (yellow), 5xx = server error (red)
+  const getStatusChipClasses = (status: number) => {
+    if (status >= 200 && status < 300) {
+      return "bg-green-50 text-green-700 border border-green-200";
+    } else if (status >= 400 && status < 500) {
+      return "bg-yellow-50 text-yellow-700 border border-yellow-200";
+    } else {
+      return "bg-red-50 text-red-700 border border-red-200";
+    }
+  };
+
+  // WHY: cURL commands let users reproduce API calls in terminal for learning/debugging.
+  // This bridges UI interactions to raw HTTP requests—crucial for backend understanding.
+  const buildCurl = (method: string, path: string, body?: object) => {
+    const url = `${backend}${path}`;
+    let curl = `curl -X ${method} "${url}" \\\n  -H "Content-Type: application/json" \\\n  -H "X-Correlation-Id: web-${Date.now()}"`;
+    if (body) {
+      curl += ` \\\n  -d '${JSON.stringify(body)}'`;
+    }
+    return curl;
+  };
+
+  const copyCurl = async (curl: string) => {
+    try {
+      await navigator.clipboard.writeText(curl);
+      toast.success("cURL command copied to clipboard!");
+    } catch (err) {
+      console.error("Failed to copy cURL:", err);
+      toast.error("Failed to copy cURL command");
+    }
+  };
 
   const getWallet = async () => await onApiCall("getWallet", `/api/wallets/${address}`);
   const getBalance = async () => await onApiCall("getBalance", `/api/wallets/${address}/balance`);
@@ -89,6 +145,17 @@ export function WzrdDashboard({
                   <span className="font-mono text-sm text-gray-900">
                     {address.slice(0, 6)}...{address.slice(-6)}
                   </span>
+                  <button
+                    onClick={handleCopyAddress}
+                    className="text-gray-500 hover:text-gray-700 transition-colors"
+                    title="Copy address"
+                  >
+                    {copiedAddress ? (
+                      <Image src="/circle-check-big.svg" alt="Copied" width={16} height={16} />
+                    ) : (
+                      <Image src="/copy.svg" alt="Copy" width={16} height={16} />
+                    )}
+                  </button>
                 </div>
               </div>
               <div className="flex items-center gap-2 justify-between">
@@ -104,24 +171,51 @@ export function WzrdDashboard({
             <div className="bg-white rounded-2xl border shadow-sm p-6">
               <h3 className="text-lg font-semibold mb-4">Balance & Info</h3>
               <div className="space-y-2">
-                <button
-                  onClick={getWallet}
-                  className="w-full rounded-lg border px-3 py-2 text-sm hover:bg-gray-50 transition-colors"
-                >
-                  Get wallet info
-                </button>
-                <button
-                  onClick={getBalance}
-                  className="w-full rounded-lg border px-3 py-2 text-sm hover:bg-gray-50 transition-colors"
-                >
-                  Get balance
-                </button>
-                <button
-                  onClick={getActivity}
-                  className="w-full rounded-lg border px-3 py-2 text-sm hover:bg-gray-50 transition-colors"
-                >
-                  Get activity
-                </button>
+                <div className="flex gap-2">
+                  <button
+                    onClick={getWallet}
+                    className="flex-1 rounded-lg border px-3 py-2 text-sm hover:bg-gray-50 transition-colors"
+                  >
+                    Get wallet info
+                  </button>
+                  <button
+                    onClick={() => copyCurl(buildCurl("GET", `/api/wallets/${address}`))}
+                    className="px-3 py-2 rounded-lg border text-xs text-gray-600 hover:bg-gray-50 transition-colors"
+                    title="Copy cURL"
+                  >
+                    📋
+                  </button>
+                </div>
+                <div className="flex gap-2">
+                  <button
+                    onClick={getBalance}
+                    className="flex-1 rounded-lg border px-3 py-2 text-sm hover:bg-gray-50 transition-colors"
+                  >
+                    Get balance
+                  </button>
+                  <button
+                    onClick={() => copyCurl(buildCurl("GET", `/api/wallets/${address}/balance`))}
+                    className="px-3 py-2 rounded-lg border text-xs text-gray-600 hover:bg-gray-50 transition-colors"
+                    title="Copy cURL"
+                  >
+                    📋
+                  </button>
+                </div>
+                <div className="flex gap-2">
+                  <button
+                    onClick={getActivity}
+                    className="flex-1 rounded-lg border px-3 py-2 text-sm hover:bg-gray-50 transition-colors"
+                  >
+                    Get activity
+                  </button>
+                  <button
+                    onClick={() => copyCurl(buildCurl("GET", `/api/wallets/${address}/activity`))}
+                    className="px-3 py-2 rounded-lg border text-xs text-gray-600 hover:bg-gray-50 transition-colors"
+                    title="Copy cURL"
+                  >
+                    📋
+                  </button>
+                </div>
               </div>
             </div>
 
@@ -147,13 +241,31 @@ export function WzrdDashboard({
                     placeholder="0.001"
                   />
                 </div>
-                <button
-                  onClick={sendTx}
-                  disabled={!transferTo}
-                  className="w-full rounded-lg bg-black text-white px-3 py-2 text-sm hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed transition-opacity"
-                >
-                  Send transfer
-                </button>
+                <div className="flex gap-2">
+                  <button
+                    onClick={sendTx}
+                    disabled={!transferTo}
+                    className="flex-1 rounded-lg bg-black text-white px-3 py-2 text-sm hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed transition-opacity"
+                  >
+                    Send transfer
+                  </button>
+                  <button
+                    onClick={() =>
+                      copyCurl(
+                        buildCurl("POST", `/api/wallets/${address}/transactions`, {
+                          to: transferTo || "<recipient-address>",
+                          amount: transferAmount,
+                          asset: "native",
+                          memo: "WZRD demo transfer",
+                        })
+                      )
+                    }
+                    className="px-3 py-2 rounded-lg border text-xs text-gray-600 hover:bg-gray-50 transition-colors"
+                    title="Copy cURL"
+                  >
+                    📋
+                  </button>
+                </div>
               </div>
             </div>
 
@@ -191,16 +303,29 @@ export function WzrdDashboard({
                       <div className="text-sm font-medium">{item.op}</div>
                       <div
                         className={`text-xs px-2 py-0.5 rounded ${
-                          item.result?.status && item.result.status < 300
-                            ? "bg-green-50 text-green-700 border border-green-200"
-                            : "bg-yellow-50 text-yellow-700 border border-yellow-200"
+                          item.result?.status ? getStatusChipClasses(item.result.status) : "bg-gray-50 text-gray-700"
                         }`}
                       >
                         {item.result?.status}
                       </div>
                     </div>
-                    <div className="text-xs text-gray-500 mb-1">
-                      CorrelationId: {item.result?.correlationId || "(generated)"}
+                    <div className="flex items-center gap-2 mb-1">
+                      <span className="text-xs text-gray-500">
+                        CorrelationId: {item.result?.correlationId || "(generated)"}
+                      </span>
+                      {item.result?.correlationId && (
+                        <button
+                          onClick={() => handleCopyCorrelationId(item.result!.correlationId)}
+                          className="text-gray-400 hover:text-gray-600 transition-colors"
+                          title="Copy correlation ID"
+                        >
+                          {copiedCorrelationId === item.result.correlationId ? (
+                            <Image src="/circle-check-big.svg" alt="Copied" width={12} height={12} />
+                          ) : (
+                            <Image src="/copy.svg" alt="Copy" width={12} height={12} />
+                          )}
+                        </button>
+                      )}
                     </div>
                     <pre className="text-xs whitespace-pre-wrap break-words">
                       {JSON.stringify(item.result?.data, null, 2)}
