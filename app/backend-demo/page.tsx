@@ -10,7 +10,7 @@ import { Toaster, toast } from "sonner";
 // feedback via toasts. The two-stage UX (landing/dashboard) mimics production apps while
 // keeping the "no verification" demo experience.
 
-type FetchResult = { status: number; data: unknown; correlationId: string } | null;
+type FetchResult = { status: number; data: unknown; correlationId: string; elapsedMs?: number } | null;
 
 const STORAGE_KEY = "wzrd-wallet-session";
 
@@ -64,8 +64,10 @@ export default function BackendDemoPage() {
   // WHY: Centralized API call wrapper that injects correlationIds for traceability.
   // Every request gets a unique ID we can track across frontend logs, backend logs,
   // and provider responses. Results are stored for the UI + surfaced via toasts.
+  // Elapsed time tracking helps identify slow requests and backend performance issues.
   const call = async (op: string, path: string, init?: RequestInit): Promise<FetchResult> => {
     const correlationId = `web-${Date.now()}`;
+    const startTime = Date.now();
     try {
       const res = await fetch(`${backend}${path}`, {
         ...init,
@@ -75,8 +77,9 @@ export default function BackendDemoPage() {
           ...(init?.headers || {}),
         },
       });
+      const elapsedMs = Date.now() - startTime;
       const data = await res.json().catch(() => ({}));
-      const payload = { status: res.status, data, correlationId };
+      const payload = { status: res.status, data, correlationId, elapsedMs };
       setResults((prev) => [{ op, result: payload }, ...prev].slice(0, 20));
 
       // Show toast

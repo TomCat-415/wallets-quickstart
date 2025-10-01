@@ -9,7 +9,7 @@ import { Footer } from "./footer";
 // Layout: wallet details card → 3-column action grid → scrollable request log.
 // This structure teaches the mental model: one wallet, many possible operations.
 
-type FetchResult = { status: number; data: unknown; correlationId: string } | null;
+type FetchResult = { status: number; data: unknown; correlationId: string; elapsedMs?: number } | null;
 
 type WzrdDashboardProps = {
   email: string;
@@ -32,6 +32,7 @@ export function WzrdDashboard({
   const [transferAmount, setTransferAmount] = useState("0.001");
   const [copiedAddress, setCopiedAddress] = useState(false);
   const [copiedCorrelationId, setCopiedCorrelationId] = useState<string | null>(null);
+  const [loadingAction, setLoadingAction] = useState<string | null>(null);
 
   const handleCopyAddress = async () => {
     try {
@@ -79,27 +80,59 @@ export function WzrdDashboard({
   const copyCurl = async (curl: string) => {
     try {
       await navigator.clipboard.writeText(curl);
-      toast.success("cURL command copied to clipboard!");
+      const preview = curl.split('\n')[0]; // First line of curl command
+      toast.success("cURL command copied!", {
+        description: preview + "...",
+      });
     } catch (err) {
       console.error("Failed to copy cURL:", err);
       toast.error("Failed to copy cURL command");
     }
   };
 
-  const getWallet = async () => await onApiCall("getWallet", `/api/wallets/${address}`);
-  const getBalance = async () => await onApiCall("getBalance", `/api/wallets/${address}/balance`);
-  const getActivity = async () => await onApiCall("getActivity", `/api/wallets/${address}/activity`);
+  const getWallet = async () => {
+    setLoadingAction("getWallet");
+    try {
+      await onApiCall("getWallet", `/api/wallets/${address}`);
+    } finally {
+      setLoadingAction(null);
+    }
+  };
+
+  const getBalance = async () => {
+    setLoadingAction("getBalance");
+    try {
+      await onApiCall("getBalance", `/api/wallets/${address}/balance`);
+    } finally {
+      setLoadingAction(null);
+    }
+  };
+
+  const getActivity = async () => {
+    setLoadingAction("getActivity");
+    try {
+      await onApiCall("getActivity", `/api/wallets/${address}/activity`);
+    } finally {
+      setLoadingAction(null);
+    }
+  };
+
   const sendTx = async () => {
     if (!transferTo) return;
-    await onApiCall("createTransaction", `/api/wallets/${address}/transactions`, {
-      method: "POST",
-      body: JSON.stringify({
-        to: transferTo,
-        amount: transferAmount,
-        asset: "native",
-        memo: "WZRD demo transfer",
-      }),
-    });
+    setLoadingAction("sendTx");
+    try {
+      await onApiCall("createTransaction", `/api/wallets/${address}/transactions`, {
+        method: "POST",
+        body: JSON.stringify({
+          to: transferTo,
+          amount: transferAmount,
+          asset: "native",
+          memo: "WZRD demo transfer",
+        }),
+      });
+    } finally {
+      setLoadingAction(null);
+    }
   };
 
   return (
@@ -174,46 +207,49 @@ export function WzrdDashboard({
                 <div className="flex gap-2">
                   <button
                     onClick={getWallet}
-                    className="flex-1 rounded-lg border px-3 py-2 text-sm hover:bg-gray-50 transition-colors"
+                    disabled={loadingAction === "getWallet"}
+                    className="flex-1 rounded-lg border px-3 py-2 text-sm hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                   >
-                    Get wallet info
+                    {loadingAction === "getWallet" ? "Loading..." : "Get wallet info"}
                   </button>
                   <button
                     onClick={() => copyCurl(buildCurl("GET", `/api/wallets/${address}`))}
                     className="px-3 py-2 rounded-lg border text-xs text-gray-600 hover:bg-gray-50 transition-colors"
-                    title="Copy cURL"
+                    title="Copy cURL command (Dev)"
                   >
-                    📋
+                    &lt;/&gt;
                   </button>
                 </div>
                 <div className="flex gap-2">
                   <button
                     onClick={getBalance}
-                    className="flex-1 rounded-lg border px-3 py-2 text-sm hover:bg-gray-50 transition-colors"
+                    disabled={loadingAction === "getBalance"}
+                    className="flex-1 rounded-lg border px-3 py-2 text-sm hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                   >
-                    Get balance
+                    {loadingAction === "getBalance" ? "Loading..." : "Get balance"}
                   </button>
                   <button
                     onClick={() => copyCurl(buildCurl("GET", `/api/wallets/${address}/balance`))}
                     className="px-3 py-2 rounded-lg border text-xs text-gray-600 hover:bg-gray-50 transition-colors"
-                    title="Copy cURL"
+                    title="Copy cURL command (Dev)"
                   >
-                    📋
+                    &lt;/&gt;
                   </button>
                 </div>
                 <div className="flex gap-2">
                   <button
                     onClick={getActivity}
-                    className="flex-1 rounded-lg border px-3 py-2 text-sm hover:bg-gray-50 transition-colors"
+                    disabled={loadingAction === "getActivity"}
+                    className="flex-1 rounded-lg border px-3 py-2 text-sm hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                   >
-                    Get activity
+                    {loadingAction === "getActivity" ? "Loading..." : "Get activity"}
                   </button>
                   <button
                     onClick={() => copyCurl(buildCurl("GET", `/api/wallets/${address}/activity`))}
                     className="px-3 py-2 rounded-lg border text-xs text-gray-600 hover:bg-gray-50 transition-colors"
-                    title="Copy cURL"
+                    title="Copy cURL command (Dev)"
                   >
-                    📋
+                    &lt;/&gt;
                   </button>
                 </div>
               </div>
@@ -244,10 +280,10 @@ export function WzrdDashboard({
                 <div className="flex gap-2">
                   <button
                     onClick={sendTx}
-                    disabled={!transferTo}
+                    disabled={!transferTo || loadingAction === "sendTx"}
                     className="flex-1 rounded-lg bg-black text-white px-3 py-2 text-sm hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed transition-opacity"
                   >
-                    Send transfer
+                    {loadingAction === "sendTx" ? "Sending..." : "Send transfer"}
                   </button>
                   <button
                     onClick={() =>
@@ -261,9 +297,9 @@ export function WzrdDashboard({
                       )
                     }
                     className="px-3 py-2 rounded-lg border text-xs text-gray-600 hover:bg-gray-50 transition-colors"
-                    title="Copy cURL"
+                    title="Copy cURL command (Dev)"
                   >
-                    📋
+                    &lt;/&gt;
                   </button>
                 </div>
               </div>
@@ -277,10 +313,10 @@ export function WzrdDashboard({
                   <span className="text-sm text-gray-600">Total Requests</span>
                   <span className="text-sm font-medium">{results.length}</span>
                 </div>
-                <div className="flex justify-between items-center">
+                <div className="flex flex-col gap-1">
                   <span className="text-sm text-gray-600">Backend URL</span>
-                  <span className="text-xs font-mono text-gray-500 truncate max-w-[150px]">
-                    {backend ? new URL(backend).hostname : "N/A"}
+                  <span className="text-xs font-mono text-gray-500 break-all">
+                    {backend || "N/A"}
                   </span>
                 </div>
               </div>
@@ -307,6 +343,7 @@ export function WzrdDashboard({
                         }`}
                       >
                         {item.result?.status}
+                        {item.result?.elapsedMs && ` • ${item.result.elapsedMs}ms`}
                       </div>
                     </div>
                     <div className="flex items-center gap-2 mb-1">
