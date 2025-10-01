@@ -5,7 +5,7 @@ export function Footer() {
     <footer className="flex flex-col gap-4 items-center justify-center py-8 mt-auto">
       <div className="flex gap-6 flex-wrap items-center justify-center">
         <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
+          className="flex items-center gap-2 text-cyan-400 hover:text-cyan-300 hover:underline hover:underline-offset-4 transition-colors"
           href="https://github.com/TomCat-415/wallets-quickstart"
           target="_blank"
           rel="noopener noreferrer"
@@ -20,7 +20,7 @@ export function Footer() {
           View code
         </a>
         <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
+          className="flex items-center gap-2 text-cyan-400 hover:text-cyan-300 hover:underline hover:underline-offset-4 transition-colors"
           href="/client-demo"
         >
           <Image
@@ -32,9 +32,9 @@ export function Footer() {
           />
           Client SDK demo
         </a>
-        
+
       </div>
-      <div className="flex">
+      <div className="flex opacity-60">
         <Image
           src="/crossmint-leaf.svg"
           alt="Powered by Crossmint"
