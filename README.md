@@ -100,4 +100,3 @@ curl $BACKEND/health
 
 ## License & attribution
 - Based on the Crossmint quickstart. See `LICENSE` and `README` history for attribution.
-
